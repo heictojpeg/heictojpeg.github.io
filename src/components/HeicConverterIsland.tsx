@@ -56,7 +56,6 @@ async function stripExifAndReencodeViaCanvas(blob: Blob, qualityFraction: number
           resolve(blob);
           return;
         }
-        // Fill white background in case of any transparent pixels
         ctx.fillStyle = '#FFFFFF';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(img, 0, 0);
@@ -66,7 +65,7 @@ async function stripExifAndReencodeViaCanvas(blob: Blob, qualityFraction: number
             if (cleanBlob) {
               resolve(cleanBlob);
             } else {
-              resolve(blob);
+              reject(new Error('Canvas toBlob failed'));
             }
           },
           'image/jpeg',
@@ -82,6 +81,77 @@ async function stripExifAndReencodeViaCanvas(blob: Blob, qualityFraction: number
       reject(err);
     };
     img.src = tempUrl;
+  });
+}
+
+async function decodeHeicWithLibheif(file: File, qualityFraction: number): Promise<Blob> {
+  const arrayBuffer = await file.arrayBuffer();
+  const uint8Array = new Uint8Array(arrayBuffer);
+
+  // Dynamically import modern WebAssembly libheif-js decoder (supports iOS 11–18+, 12MP/48MP grid tiles, miaf/MiHB)
+  const libheifModule: any = await import('libheif-js/wasm-bundle');
+  const libheif = libheifModule?.default?.HeifDecoder
+    ? libheifModule.default
+    : libheifModule?.HeifDecoder
+    ? libheifModule
+    : libheifModule?.default?.default || libheifModule;
+
+  const decoder = new libheif.HeifDecoder();
+  const imagesArr = decoder.decode(uint8Array);
+
+  if (!imagesArr || imagesArr.length === 0) {
+    throw new Error('No decodable HEIC/HEIF image frames found');
+  }
+
+  // Pick primary image or first image frame
+  const primaryImage = imagesArr.find((img: any) => {
+    try {
+      return typeof img.is_primary === 'function' && img.is_primary();
+    } catch (_) {
+      return false;
+    }
+  }) || imagesArr[0];
+
+  const width = primaryImage.get_width();
+  const height = primaryImage.get_height();
+
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    throw new Error('Could not initialize 2D canvas context');
+  }
+
+  // Initialize opaque white canvas ImageData buffer
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(0, 0, width, height);
+  const imageData = ctx.getImageData(0, 0, width, height);
+
+  await new Promise<void>((resolve, reject) => {
+    primaryImage.display(imageData, (displayResult: ImageData | null) => {
+      if (!displayResult) {
+        reject(new Error('libheif display decoding failed'));
+        return;
+      }
+      resolve();
+    });
+  });
+
+  ctx.putImageData(imageData, 0, 0);
+
+  return new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(
+      (jpegBlob) => {
+        if (jpegBlob) {
+          resolve(jpegBlob);
+        } else {
+          reject(new Error('Failed to encode canvas to JPEG blob'));
+        }
+      },
+      'image/jpeg',
+      qualityFraction
+    );
   });
 }
 
@@ -114,28 +184,40 @@ export default function HeicConverterIsland({ t }: Props) {
       const qualityFraction = Math.min(1, Math.max(0.1, targetQuality / 100));
       let resultBlob: Blob;
 
-      const isAlreadyJpegOrPng =
+      const isStandardBrowserImage =
         file.type === 'image/jpeg' || file.type === 'image/png' || file.type === 'image/webp';
 
-      if (isAlreadyJpegOrPng) {
+      if (isStandardBrowserImage) {
         resultBlob = await stripExifAndReencodeViaCanvas(file, qualityFraction);
       } else {
-        // Dynamically import heic2any on client side only when needed
-        const heic2anyModule = await import('heic2any');
-        const heic2any = heic2anyModule.default || heic2anyModule;
+        try {
+          // Primary Engine: Modern WebAssembly libheif-js (handles 12MP/48MP iPhone HEIC, grid tiles, miaf, etc.)
+          resultBlob = await decodeHeicWithLibheif(file, qualityFraction);
+        } catch (primaryErr) {
+          console.warn('Primary WASM HEIC decoder fallback to heic2any:', primaryErr);
+          // Fallback Engine: heic2any (properly unwrapping nested CJS default export)
+          const heic2anyModule: any = await import('heic2any');
+          const heic2anyFn =
+            typeof heic2anyModule === 'function'
+              ? heic2anyModule
+              : typeof heic2anyModule?.default === 'function'
+              ? heic2anyModule.default
+              : heic2anyModule?.default?.default;
 
-        const converted = await heic2any({
-          blob: file,
-          toType: 'image/jpeg',
-          quality: qualityFraction,
-        });
+          if (typeof heic2anyFn !== 'function') {
+            throw primaryErr;
+          }
 
-        const rawJpegBlob = Array.isArray(converted) ? converted[0] : converted;
+          const converted = await heic2anyFn({
+            blob: file,
+            toType: 'image/jpeg',
+            quality: qualityFraction,
+          });
 
-        if (shouldStripExif) {
-          resultBlob = await stripExifAndReencodeViaCanvas(rawJpegBlob, qualityFraction);
-        } else {
-          resultBlob = rawJpegBlob;
+          const rawJpegBlob = Array.isArray(converted) ? converted[0] : converted;
+          resultBlob = shouldStripExif
+            ? await stripExifAndReencodeViaCanvas(rawJpegBlob, qualityFraction)
+            : rawJpegBlob;
         }
       }
 
