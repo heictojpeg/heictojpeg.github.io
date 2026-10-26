@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" fill="none">
+  <rect width="1200" height="630" fill="#F9F8F0"/>
+  <rect x="40" y="40" width="1120" height="550" rx="40" fill="#D9D28B" stroke="#6A795D" stroke-width="8"/>
+  <rect x="90" y="90" width="140" height="140" rx="32" fill="#6A795D"/>
+  <path d="M118 190L144 160L164 182L188 152L210 190H118Z" fill="#D9D28B"/>
+  <circle cx="140" cy="134" r="14" fill="#D9D28B"/>
+  <text x="260" y="155" fill="#262D21" font-family="system-ui, sans-serif" font-weight="900" font-size="60">HEIC to JPG &amp; JPEG Converter</text>
+  <text x="260" y="215" fill="#6A795D" font-family="system-ui, sans-serif" font-weight="800" font-size="34">100% Client-Side • Free Offline HEIF to JPG Tool • Batch ZIP Export</text>
+  <rect x="90" y="275" width="1020" height="190" rx="28" fill="#F9F8F0" stroke="#8E9162" stroke-width="4" stroke-dasharray="16 12"/>
+  <text x="600" y="360" text-anchor="middle" fill="#262D21" font-family="system-ui, sans-serif" font-weight="800" font-size="42">Instant Browser Conversion — Zero Server Uploads</text>
+  <text x="600" y="420" text-anchor="middle" fill="#6A795D" font-family="system-ui, sans-serif" font-weight="700" font-size="28">Supports iPhone / iPad .HEIC &amp; .HEIF • EXIF Privacy Stripping • Works Offline (PWA)</text>
+  <rect x="90" y="495" width="340" height="60" rx="18" fill="#6A795D"/>
+  <text x="260" y="534" text-anchor="middle" fill="#FFFFFF" font-family="system-ui, sans-serif" font-weight="800" font-size="26">heictojpeg.github.io</text>
+</svg>

@@ -1,0 +1,19 @@
+---
+import ConverterPage from '../../components/ConverterPage.astro';
+import { SUPPORTED_LANGUAGES, type LangCode } from '../../i18n/translations';
+
+export function getStaticPaths() {
+  return SUPPORTED_LANGUAGES.filter((l) => l.code !== 'en').map((l) => ({
+    params: { lang: l.code },
+    props: { lang: l.code },
+  }));
+}
+
+interface Props {
+  lang: LangCode;
+}
+
+const { lang } = Astro.props;
+---
+
+<ConverterPage lang={lang} />

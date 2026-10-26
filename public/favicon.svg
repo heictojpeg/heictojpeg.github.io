@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+  <rect width="128" height="128" rx="28" fill="#6A795D"/>
+  <rect x="14" y="14" width="100" height="100" rx="20" fill="#D9D28B"/>
+  <path d="M28 84L48 62L64 78L82 56L100 84H28Z" fill="#6A795D"/>
+  <circle cx="44" cy="42" r="10" fill="#6A795D"/>
+  <rect x="28" y="90" width="72" height="14" rx="5" fill="#262D21"/>
+  <text x="64" y="100.5" text-anchor="middle" fill="#D9D28B" font-family="system-ui, sans-serif" font-weight="900" font-size="11">HEIC→JPG</text>
+</svg>

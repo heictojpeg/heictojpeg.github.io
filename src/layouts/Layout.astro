@@ -1,0 +1,158 @@
+---
+import { SUPPORTED_LANGUAGES, TRANSLATIONS, type LangCode } from '../i18n/translations';
+import { pwaInfo } from 'virtual:pwa-info';
+
+interface Props {
+  lang: LangCode;
+}
+
+const { lang } = Astro.props;
+const t = TRANSLATIONS[lang];
+const currentLangMeta = SUPPORTED_LANGUAGES.find((l) => l.code === lang) || SUPPORTED_LANGUAGES[0];
+const siteOrigin = 'https://heictojpeg.github.io';
+const canonicalUrl = `${siteOrigin}${currentLangMeta.path}`;
+const ogImageUrl = `${siteOrigin}/og-image.svg`;
+
+const jsonLdSchema = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'WebApplication',
+      name: 'HEICtoJPEG - Free Online & Offline HEIC/HEIF to JPG Converter',
+      url: canonicalUrl,
+      description:
+        'Free online HEIC to JPG and HEIF to JPG converter. Convert Apple iPhone photos to JPEG in your browser with zero server uploads, batch ZIP download, and offline PWA app support.',
+      applicationCategory: 'MultimediaApplication',
+      operatingSystem: 'Windows, macOS, iOS, Android, Linux',
+      browserRequirements: 'Requires JavaScript and HTML5 Canvas',
+      inLanguage: currentLangMeta.hreflang,
+      offers: {
+        '@type': 'Offer',
+        price: '0',
+        priceCurrency: 'USD',
+      },
+    },
+    {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        {
+          '@type': 'ListItem',
+          position: 1,
+          name: t.breadcrumbs.home,
+          item: `${siteOrigin}/`,
+        },
+        {
+          '@type': 'ListItem',
+          position: 2,
+          name: t.breadcrumbs.current,
+          item: canonicalUrl,
+        },
+      ],
+    },
+    {
+      '@type': 'HowTo',
+      name: t.howTo.title,
+      description: t.howTo.subtitle,
+      step: t.howTo.steps.map((step, index) => ({
+        '@type': 'HowToStep',
+        position: index + 1,
+        name: step.title,
+        text: step.description,
+      })),
+    },
+    {
+      '@type': 'FAQPage',
+      mainEntity: t.faq.items.map((faqItem) => ({
+        '@type': 'Question',
+        name: faqItem.question,
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: faqItem.answer,
+        },
+      })),
+    },
+  ],
+};
+---
+
+<!doctype html>
+<html lang={currentLangMeta.hreflang} class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Google tag (gtag.js) -->
+    <script is:inline async src="https://www.googletagmanager.com/gtag/js?id=G-EJWRDHLEMW"></script>
+    <script is:inline>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-EJWRDHLEMW');
+    </script>
+
+    <!-- Primary SEO Meta Tags -->
+    <title>{t.meta.title}</title>
+    <meta name="description" content={t.meta.description} />
+    <meta name="keywords" content={t.meta.keywords} />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <meta name="author" content="HEICtoJPEG" />
+    <meta name="theme-color" content="#6A795D" />
+
+    <!-- Self-Referencing Canonical Tag -->
+    <link rel="canonical" href={canonicalUrl} />
+
+    <!-- Complete Hreflang Cluster (All 8 Languages + x-default) -->
+    {SUPPORTED_LANGUAGES.map((item) => (
+      <link rel="alternate" hreflang={item.hreflang} href={`${siteOrigin}${item.path}`} />
+    ))}
+    <link rel="alternate" hreflang="x-default" href={`${siteOrigin}/`} />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="HEICtoJPEG" />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:title" content={t.meta.title} />
+    <meta property="og:description" content={t.meta.description} />
+    <meta property="og:image" content={ogImageUrl} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale" content={currentLangMeta.hreflang} />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content={canonicalUrl} />
+    <meta name="twitter:title" content={t.meta.title} />
+    <meta name="twitter:description" content={t.meta.description} />
+    <meta name="twitter:image" content={ogImageUrl} />
+
+    <!-- Icons & PWA Manifest -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/icon-192.svg" />
+    {pwaInfo && <Fragment set:html={pwaInfo.webManifest.linkTag} />}
+
+    <!-- Prevent Theme Flash (Light Mode Default, Respects Saved Preference) -->
+    <script is:inline>
+      (function () {
+        try {
+          const savedTheme = localStorage.getItem('theme');
+          if (savedTheme === 'dark') {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        } catch (_) {}
+      })();
+    </script>
+
+    <!-- Strict JSON-LD Structured Data (@graph: WebApplication, BreadcrumbList, HowTo, FAQPage - 0% Fake Reviews) -->
+    <script type="application/ld+json" set:html={JSON.stringify(jsonLdSchema)} />
+  </head>
+  <body class="min-h-screen flex flex-col bg-sage-surface dark:bg-sage-darkBg text-sage-charcoal dark:text-sage-light font-sans antialiased selection:bg-sage-primary selection:text-white dark:selection:bg-sage-accent dark:selection:text-sage-charcoal transition-colors duration-200">
+    <slot />
+    <script>
+      import { registerSW } from 'virtual:pwa-register';
+      registerSW({ immediate: true });
+    </script>
+  </body>
+</html>

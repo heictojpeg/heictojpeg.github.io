@@ -1,0 +1,64 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Navbar from './Navbar.astro';
+import HeicConverterIsland from './HeicConverterIsland';
+import SeoContent from './SeoContent.astro';
+import Footer from './Footer.astro';
+import { SUPPORTED_LANGUAGES, TRANSLATIONS, type LangCode } from '../i18n/translations';
+
+interface Props {
+  lang: LangCode;
+}
+
+const { lang } = Astro.props;
+const t = TRANSLATIONS[lang];
+const currentLangMeta = SUPPORTED_LANGUAGES.find((l) => l.code === lang) || SUPPORTED_LANGUAGES[0];
+---
+
+<Layout lang={lang}>
+  <Navbar lang={lang} />
+
+  <main class="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-16">
+    <!-- Visible Semantic Breadcrumb Trail -->
+    <nav aria-label="Breadcrumb" class="mb-6">
+      <ol class="flex flex-wrap items-center gap-2 text-base md:text-lg font-bold text-sage-charcoal/80 dark:text-sage-light/85">
+        <li>
+          <a
+            href="/"
+            class="hover:underline text-sage-primary dark:text-sage-accent focus:outline-none focus-visible:ring-2 focus-visible:ring-sage-primary rounded px-1"
+          >
+            {t.breadcrumbs.home}
+          </a>
+        </li>
+        <li aria-hidden="true" class="text-sage-moss">/</li>
+        <li aria-current="page" class="text-sage-charcoal dark:text-sage-light">
+          {t.breadcrumbs.current}
+        </li>
+      </ol>
+    </nav>
+
+    <!-- Hero Header Section (Single H1 with Big Typography) -->
+    <section aria-labelledby="main-hero-heading" class="text-center max-w-4xl mx-auto mb-10">
+      <h1
+        id="main-hero-heading"
+        class="text-4xl md:text-6xl font-extrabold tracking-tight text-sage-charcoal dark:text-sage-light leading-tight mb-5"
+      >
+        {t.hero.h1}
+      </h1>
+
+      <p class="text-lg md:text-xl font-medium text-sage-charcoal/90 dark:text-gray-200 leading-relaxed">
+        {t.hero.subtitle}
+      </p>
+    </section>
+
+    <!-- Interactive Client-Side HEIC/HEIF to JPG/JPEG Converter React Island -->
+    <section aria-label={t.breadcrumbs.current}>
+      <HeicConverterIsland client:load t={t.converter} />
+    </section>
+
+    <!-- High-Ranking Semantic SEO & Educational Content Sections -->
+    <SeoContent lang={lang} />
+  </main>
+
+  <Footer lang={lang} />
+</Layout>
